@@ -4,20 +4,26 @@ import (
 	"database/sql"
 	"html/template"
 	"log"
+	validate "loginregistration/validation"
 	"net/http"
 )
 
-
-var tpl_login = template.Must(template.ParseFiles("./templates/login.html"))
-var tpl_signup = template.Must(template.ParseFiles("./templates/signup.html"))
-var tpl_index = template.Must(template.ParseFiles("./templates/index.html"))
+var tplLogin = template.Must(template.ParseFiles("./templates/login.html"))
+var tplRegister = template.Must(template.ParseFiles("./templates/signup.html"))
+var tplIndex = template.Must(template.ParseFiles("./templates/index.html"))
+var tplUpdate = template.Must(template.ParseFiles("./templates/update.html"))
 
 type User struct {
 	Username string
 }
 
+//For GET
+func LoginPageHandler(w http.ResponseWriter, r *http.Request)  {
+	tplLogin.Execute(w, nil)
+}
+
+//For POST
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	tpl_login.Execute(w, nil)
 	r.ParseForm()
 	username := r.FormValue("username")
 	password := r.FormValue("password")
@@ -25,39 +31,94 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var obtained_password string
 	err := result.Scan(&obtained_password)
 	if err != nil {
-		if err == sql.ErrNoRows{
+		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("<h1>No user exist </h1>"))
+			w.Write([]byte("<script>alert('No user exist!')</script>"))
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if obtained_password != password {
-		w.Write([]byte("<h1>Login failed </h1>"))
+		w.Write([]byte("<script>alert('Login Failed!')</script>"))
 		w.WriteHeader(http.StatusUnauthorized)
-	}else {
-		w.Write([]byte("<h1>Success </h1>"))
+	} else {
+		http.Redirect(w,r,"/",302)
 	}
 
 }
 
+//FOR GET
+func SignUpPageHandler(w http.ResponseWriter, r *http.Request) {
+	tplRegister.Execute(w, nil)
+}
+
+//FOR POST
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
-	tpl_signup.Execute(w, nil)
 	r.ParseForm()
 	username := r.FormValue("username")
 	password1 := r.FormValue("password1")
 	password2 := r.FormValue("password2")
-	log.Println(password1, password2)
-	if string(password1) != string(password2) {
-		w.Write([]byte("<h1>Sorry two password doesn't match"))
-	} else {
-		if _, err := db.Query("insert into users values ($1, $2)", username, password1); err != nil {
-			w.Write([]byte("<h1>Sorry</h1>"))
+	_username, _password1, _password2 := false, false, false
+	_username = !validate.IsEmpty(username)
+	_password1 = !validate.IsEmpty(password1)
+	_password2 = !validate.IsEmpty(password2)
+	if(_username && _password1 && _password2){
+		if string(password1) != string(password2) {
+			http.Redirect(w, r, "/signup" , 302)
+			return
 		} else {
-			w.Write([]byte("<script>alert('Success! Please login')</script>"))
+			if _, err := db.Query("insert into users values ($1, $2)", username, password1); err != nil {
+				w.Write([]byte("<script>alert('Error occurred!')</script>"))
+			} else {
+				w.Write([]byte("<script>alert('Success! Please login')</script>"))
+			}
 		}
+	}else {
+		w.Write([]byte("<script>alert('Sorry! Fields can not be empty')</script>"))
 	}
+
+}
+
+func DeleteHandler(w http.ResponseWriter, r *http.Request){
+	username := r.URL.Query().Get("username")
+	_, err := db.Query("DELETE FROM users WHERE username=$1",username)
+	if err != nil {
+		panic(err.Error())
+	}
+	log.Println("DELETE")
+	http.Redirect(w, r, "/", 301)
+}
+
+func UpdatePage(w http.ResponseWriter, r *http.Request)  {
+	tplUpdate.Execute(w,nil)
+}
+
+//POST
+func UpdateHandler(w http.ResponseWriter, r *http.Request){
+	userToBeUpdated := r.URL.Query().Get("username")
+	username := r.FormValue("username")
+	password1 := r.FormValue("password1")
+	password2 := r.FormValue("password2")
+	_username, _password1, _password2 := false, false, false
+	_username = !validate.IsEmpty(username)
+	_password1 = !validate.IsEmpty(password1)
+	_password2 = !validate.IsEmpty(password2)
+	if(_username && _password1 && _password2){
+		if string(password1) != string(password2) {
+			http.Redirect(w, r, "/signup" , 302)
+			return
+		} else {
+			if _, err := db.Query("update users set username=$1,password=$2 where username =$3", username, password1,userToBeUpdated); err != nil {
+				w.Write([]byte("<script>alert('Error occurred!')</script>"))
+			} else {
+				http.Redirect(w,r,"/",302)
+			}
+		}
+	}else {
+		w.Write([]byte("<script>alert('Sorry! Fields can not be empty')</script>"))
+	}
+
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -79,5 +140,5 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 	log.Println(len(Users))
-	tpl_index.Execute(w, Users)
+	tplIndex.Execute(w, Users)
 }

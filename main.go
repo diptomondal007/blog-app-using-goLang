@@ -17,8 +17,13 @@ func main() {
 func routingHandler() {
 	router := mux.NewRouter()
 	router.HandleFunc("/", handlers.IndexHandler)
-	router.HandleFunc("/login", handlers.LoginHandler)
-	router.HandleFunc("/signup", handlers.SignUpHandler)
+	router.HandleFunc("/login", handlers.LoginPageHandler).Methods("GET")
+	router.HandleFunc("/login", handlers.LoginHandler).Methods("POST")
+	router.HandleFunc("/signup", handlers.SignUpPageHandler).Methods("GET")
+	router.HandleFunc("/signup", handlers.SignUpHandler).Methods("POST")
+	router.HandleFunc("/delete",handlers.DeleteHandler)
+	router.HandleFunc("/update",handlers.UpdateHandler).Methods("POST")
+	router.HandleFunc("/update",handlers.UpdatePage).Methods("GET")
 	log.Fatalln(http.ListenAndServe("localhost:8000", router))
 }
 
