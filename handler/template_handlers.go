@@ -8,28 +8,31 @@ import (
 	"net/http"
 )
 
-var tplLogin = template.Must(template.ParseFiles("./templates/login.html"))
-var tplRegister = template.Must(template.ParseFiles("./templates/signup.html"))
-var tplIndex = template.Must(template.ParseFiles("./templates/index.html"))
+
 var tplUpdate = template.Must(template.ParseFiles("./templates/update.html"))
 
+//User struct to pass data to the html templates
 type User struct {
 	Username string
 }
 
-//For GET
+//LoginPageHandler for rendering Login page
 func LoginPageHandler(w http.ResponseWriter, r *http.Request)  {
-	tplLogin.Execute(w, nil)
+	tplLogin, err := template.ParseFiles("./templates/login.html","./templates/base.html")
+	if err !=nil {
+		log.Println(err)
+	}
+	tplLogin.Execute(w,nil)
 }
 
-//For POST
+//LoginHandler for handling post data from login page
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	result := db.QueryRow("select password from users where username=$1", username)
-	var obtained_password string
-	err := result.Scan(&obtained_password)
+	var obtainedPassword string
+	err := result.Scan(&obtainedPassword)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -39,7 +42,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if obtained_password != password {
+	if obtainedPassword != password {
 		w.Write([]byte("<script>alert('Login Failed!')</script>"))
 		w.WriteHeader(http.StatusUnauthorized)
 	} else {
@@ -48,12 +51,16 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-//FOR GET
+//SignUpPageHandler for rendering sign up page
 func SignUpPageHandler(w http.ResponseWriter, r *http.Request) {
+	tplRegister, err := template.ParseFiles("./templates/signup.html","./templates/base.html")
+	if err !=nil {
+		log.Println(err)
+	}
 	tplRegister.Execute(w, nil)
 }
 
-//FOR POST
+//SignUpHandler for getting post request and handle them
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	username := r.FormValue("username")
@@ -63,10 +70,9 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	_username = !validate.IsEmpty(username)
 	_password1 = !validate.IsEmpty(password1)
 	_password2 = !validate.IsEmpty(password2)
-	if(_username && _password1 && _password2){
+	if _username && _password1 && _password2 {
 		if string(password1) != string(password2) {
 			http.Redirect(w, r, "/signup" , 302)
-			return
 		} else {
 			if _, err := db.Query("insert into users values ($1, $2)", username, password1); err != nil {
 				w.Write([]byte("<script>alert('Error occurred!')</script>"))
@@ -80,6 +86,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+//DeleteHandler for handling request of deleting a user
 func DeleteHandler(w http.ResponseWriter, r *http.Request){
 	username := r.URL.Query().Get("username")
 	_, err := db.Query("DELETE FROM users WHERE username=$1",username)
@@ -90,11 +97,12 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request){
 	http.Redirect(w, r, "/", 301)
 }
 
+//UpdatePage to render user information update page
 func UpdatePage(w http.ResponseWriter, r *http.Request)  {
 	tplUpdate.Execute(w,nil)
 }
 
-//POST
+//UpdateHandler for handling submitted update data
 func UpdateHandler(w http.ResponseWriter, r *http.Request){
 	userToBeUpdated := r.URL.Query().Get("username")
 	username := r.FormValue("username")
@@ -104,10 +112,9 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request){
 	_username = !validate.IsEmpty(username)
 	_password1 = !validate.IsEmpty(password1)
 	_password2 = !validate.IsEmpty(password2)
-	if(_username && _password1 && _password2){
+	if _username && _password1 && _password2{
 		if string(password1) != string(password2) {
 			http.Redirect(w, r, "/signup" , 302)
-			return
 		} else {
 			if _, err := db.Query("update users set username=$1,password=$2 where username =$3", username, password1,userToBeUpdated); err != nil {
 				w.Write([]byte("<script>alert('Error occurred!')</script>"))
@@ -121,6 +128,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request){
 
 }
 
+//IndexHandler for rendering and handling Index page
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query("SELECT username FROM users")
 	if err != nil {
@@ -140,5 +148,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 	log.Println(len(Users))
-	tplIndex.Execute(w, Users)
+	tm := template.Must(template.ParseFiles("./templates/index.html","./templates/base.html"))
+	errortm := tm.Execute(w ,Users)
+	log.Println(errortm)
 }

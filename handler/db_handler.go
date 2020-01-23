@@ -15,7 +15,7 @@ const (
 	dbname   = "userDB"
 )
 
-
+//InitDB connect with with the database
 func InitDB() {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
