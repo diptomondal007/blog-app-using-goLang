@@ -16,7 +16,8 @@ func main() {
 
 func routingHandler() {
 	router := mux.NewRouter()
-	router.HandleFunc("/", handlers.IndexHandler)
+	router.HandleFunc("/", handlers.IndexPageHandler).Methods("GET")
+	router.HandleFunc("/", handlers.Indexhandler).Methods("POST")
 	router.HandleFunc("/login", handlers.LoginPageHandler).Methods("GET")
 	router.HandleFunc("/login", handlers.LoginHandler).Methods("POST")
 	router.HandleFunc("/signup", handlers.SignUpPageHandler).Methods("GET")

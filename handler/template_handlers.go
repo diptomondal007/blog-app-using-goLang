@@ -12,9 +12,15 @@ import (
 var tplUpdate = template.Must(template.ParseFiles("./templates/update.html"))
 
 //User struct to pass data to the html templates
-type User struct {
+var loggedin_user string
+
+//Post struct
+type Post struct {
+	Id int64
+	Body string
 	Username string
 }
+
 
 //LoginPageHandler for rendering Login page
 func LoginPageHandler(w http.ResponseWriter, r *http.Request)  {
@@ -46,6 +52,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("<script>alert('Login Failed!')</script>"))
 		w.WriteHeader(http.StatusUnauthorized)
 	} else {
+		loggedin_user = username
 		http.Redirect(w,r,"/",302)
 	}
 
@@ -119,6 +126,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request){
 			if _, err := db.Query("update users set username=$1,password=$2 where username =$3", username, password1,userToBeUpdated); err != nil {
 				w.Write([]byte("<script>alert('Error occurred!')</script>"))
 			} else {
+				loggedin_user = username
 				http.Redirect(w,r,"/",302)
 			}
 		}
@@ -128,27 +136,45 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request){
 
 }
 
-//IndexHandler for rendering and handling Index page
-func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT username FROM users")
+//IndexPageHandler for rendering and handling Index page
+func IndexPageHandler(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.Query("SELECT * FROM posts")
+	var posts []Post
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
-	var Users []User
 	for rows.Next() {
+		var id int64
+		var body string
 		var username string
-		var user User
-		err = rows.Scan(&username)
+		var post Post
+		err = rows.Scan(&id,&body,&username)
 		if err != nil {
 			panic(err)
 		}
-		user.Username = username
-		Users = append(Users, user)
+		post.Id = id
+		post.Body = body
+		post.Username = username
+		posts = append(posts, post)
 
 	}
-	log.Println(len(Users))
+	log.Println(posts)
 	tm := template.Must(template.ParseFiles("./templates/index.html","./templates/base.html"))
-	errortm := tm.Execute(w ,Users)
+	errortm := tm.Execute(w ,posts)
 	log.Println(errortm)
+}
+
+//IndexHandler for post request of post data
+func Indexhandler(w http.ResponseWriter, r *http.Request){
+	r.ParseForm()
+	body := r.FormValue("body")
+	log.Println(body)
+	user := loggedin_user
+	if _, err := db.Query("insert into posts(body,username) values ($1, $2)", body, user); err != nil {
+		log.Println(err)
+		http.Redirect(w,r,"/",302)
+	} else {
+		w.Write([]byte("<script>alert('Success!')</script>"))
+	}
 }
