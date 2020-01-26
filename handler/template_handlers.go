@@ -12,6 +12,13 @@ import (
 var tplUpdate = template.Must(template.ParseFiles("./templates/update.html"))
 
 //User struct to pass data to the html templates
+type User struct {
+	Username string
+	IsFollowedByCurrentUser bool
+}
+
+
+
 var loggedin_user string
 
 //Post struct
@@ -19,6 +26,26 @@ type Post struct {
 	Id int64
 	Body string
 	Username string
+	Editable bool
+	Deletable bool
+}
+
+type IndexData struct {
+	Posts      []Post
+	LoggedUser string
+	IsLoggedInUser bool
+}
+
+type UserPageData struct {
+	Users[] User
+	LoggedUser string
+	IsLoggedInUser bool
+}
+
+type UpdatePageData struct {
+	Post Post
+	LoggedUser string
+	IsLoggedInUser bool
 }
 
 
@@ -138,7 +165,7 @@ func UpdateHandler(w http.ResponseWriter, r *http.Request){
 
 //IndexPageHandler for rendering and handling Index page
 func IndexPageHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT * FROM posts")
+	rows, err := db.Query("select posts.id,posts.body,posts.username from posts inner join followers on followers.following_id=posts.username where followers.user_id =$1 order by posts.id desc",loggedin_user)
 	var posts []Post
 	if err != nil {
 		panic(err)
@@ -151,17 +178,30 @@ func IndexPageHandler(w http.ResponseWriter, r *http.Request) {
 		var post Post
 		err = rows.Scan(&id,&body,&username)
 		if err != nil {
-			panic(err)
+			log.Println(err)
 		}
 		post.Id = id
 		post.Body = body
 		post.Username = username
+		if loggedin_user == username {
+			post.Editable = true
+			post.Deletable = true
+		}
 		posts = append(posts, post)
 
+
 	}
-	log.Println(posts)
+	var IndexPageData IndexData
+	if len(loggedin_user)<1{
+		IndexPageData.IsLoggedInUser = false
+	}else {
+		IndexPageData.IsLoggedInUser = true
+	}
+	IndexPageData.Posts  = posts
+	IndexPageData.LoggedUser = loggedin_user
+	log.Println(IndexPageData)
 	tm := template.Must(template.ParseFiles("./templates/index.html","./templates/base.html"))
-	errortm := tm.Execute(w ,posts)
+	errortm := tm.Execute(w ,IndexPageData)
 	log.Println(errortm)
 }
 
@@ -171,10 +211,135 @@ func Indexhandler(w http.ResponseWriter, r *http.Request){
 	body := r.FormValue("body")
 	log.Println(body)
 	user := loggedin_user
-	if _, err := db.Query("insert into posts(body,username) values ($1, $2)", body, user); err != nil {
+	if _, err := db.Query("insert into Posts(body,username) values ($1, $2)", body, user); err != nil {
 		log.Println(err)
 		http.Redirect(w,r,"/",302)
 	} else {
-		w.Write([]byte("<script>alert('Success!')</script>"))
+		http.Redirect(w,r,"/",302)
 	}
+}
+
+
+func UpdatePostPage(w http.ResponseWriter, r *http.Request){
+	tplPostUpdate, err := template.ParseFiles("./templates/updatePost.html","./templates/base.html")
+	if err !=nil {
+		log.Println(err)
+	}
+	postToBeUpdated := r.URL.Query().Get("id")
+	rows, err := db.Query("SELECT * FROM Posts where id=$1",postToBeUpdated)
+	if err != nil {
+		panic(err)
+	}
+	var id int64
+	var username string
+	var body string
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(&id,&body,&username)
+		if err != nil {
+			panic(err)
+		}
+		log.Println(body)
+	}
+	var post Post
+	post.Id = id
+	post.Body = body
+	post.Username = username
+
+	var data UpdatePageData
+	data.Post = post
+	data.LoggedUser = loggedin_user
+	if len(loggedin_user)<1{
+		data.IsLoggedInUser = false
+	}else {
+		data.IsLoggedInUser = true
+	}
+	tplPostUpdate.Execute(w,data)
+}
+
+func UpdatePost(w http.ResponseWriter, r *http.Request){
+	postToBeUpdated := r.URL.Query().Get("id")
+	body := r.FormValue("body")
+	if _, err := db.Query("update Posts set body =$1 where id=$2", body, postToBeUpdated); err!=nil {
+		w.Write([]byte("<script>alert('Sorry!')</script>"))
+	}else {
+		http.Redirect(w,r,"/",302)
+	}
+}
+
+//DeleteHandler for handling request of deleting a user
+func DeletePostHandler(w http.ResponseWriter, r *http.Request){
+	id := r.URL.Query().Get("id")
+	_, err := db.Query("DELETE FROM Posts WHERE id=$1",id)
+	if err != nil {
+		panic(err.Error())
+	}
+	log.Println("POST DELETED")
+	http.Redirect(w, r, "/", 301)
+}
+
+func UsersPageHandler(w http.ResponseWriter, r *http.Request){
+	rows, err := db.Query("SELECT username FROM users")
+	var users []User
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var username string
+		var user User
+		err = rows.Scan(&username)
+		if err != nil {
+			panic(err)
+		}
+		followRow, err := db.Query("SELECT following_id from followers where (user_id = $1 AND following_id= $2)",loggedin_user,username)
+		if err!=nil {
+			log.Println(err)
+		}
+		user.Username = username
+		for followRow.Next(){
+
+					user.IsFollowedByCurrentUser = true
+		}
+		users = append(users, user)
+
+	}
+	var UserPageData UserPageData
+	if len(loggedin_user)<1{
+		UserPageData.IsLoggedInUser = false
+	}else {
+		UserPageData.IsLoggedInUser = true
+	}
+	UserPageData.Users  = users
+	UserPageData.LoggedUser = loggedin_user
+	log.Println(users)
+	tm := template.Must(template.ParseFiles("./templates/users.html","./templates/base.html"))
+	errortm := tm.Execute(w ,UserPageData)
+	log.Println(errortm)
+}
+
+func FollowUser(w http.ResponseWriter, r *http.Request){
+	username := r.URL.Query().Get("username")
+	_, err := db.Query("insert into followers values ($1, $2)",loggedin_user, username)
+	if err != nil {
+		log.Println(err)
+	}
+	http.Redirect(w,r,"/users",301)
+
+}
+
+func UnFollowUser(w http.ResponseWriter, r *http.Request){
+	username := r.URL.Query().Get("username")
+	_, err := db.Query("DELETE  from followers WHERE user_id = $1 AND following_id = $2",loggedin_user, username)
+	if err != nil {
+		panic(err)
+	}
+	log.Println("UnFollowed")
+	http.Redirect(w,r,"/users",301)
+}
+
+func Logout(w http.ResponseWriter, r *http.Request){
+	loggedin_user = ""
+	http.Redirect(w,r,"/login",301)
+
 }

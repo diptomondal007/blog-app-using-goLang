@@ -2,39 +2,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <body>
-<div class="container col-md-4">
-    <form  method="post" style="margin-top: 20px">
+<div class="container col-md-6">
+    <form method="post" style="margin-top: 20px">
         <div class="form-group">
             <textarea class="form-control" id="exampleFormControlTextarea1" rows="7" name="body"></textarea>
         </div>
         <button type="submit" class="btn btn-primary">Post</button>
     </form>
-<div style="margin-top: 30px">
-    {{range $post := .}}
-        <div class="card" style="padding-top: 20px ;margin-top: 30px">
-            <div class="card-body">
-                <h5 class="card-title">{{$post.Username}}</h5>
-                <p class="card-text">{{$post.Body}}</p>
+    <div style="margin-top: 30px">
+        {{range $post := .Posts}}
+            <div class="card" style="padding-top: 20px ;margin-top: 30px">
+                <div class="card-body">
+                    <h5 class="card-title">{{$post.Username}}</h5>
+                    <p class="card-text">{{$post.Body}}</p>
+                    {{if $post.Editable}}
+                        <div>
+                            <a href="/updatePost?id={{ $post.Id }}">Edit</a>
+                            <a href="/deletePost?id={{ $post.Id }}">Delete</a>
+
+                        </div>
+                    {{end}}
+                </div>
             </div>
-        </div>
-    {{end}}
-</div>
+        {{end}}
+    </div>
 
 </div>
 </body>
 </html>
-
-
-
-{{/*{{range $user := .}}*/}}
-{{/*    <div class="container col-md-4" style="padding: 20px">*/}}
-{{/*        <div class="alert alert-primary" role="alert">*/}}
-{{/*            {{$user.Username}}*/}}
-{{/*            <div >*/}}
-{{/*                <a href="/update?username={{ $user.Username }}">Edit</a>*/}}
-{{/*                <a href="/delete?username={{ $user.Username }}">Delete</a>*/}}
-
-{{/*            </div>*/}}
-{{/*        </div>*/}}
-{{/*    </div>*/}}
-{{/*{{end}}*/}}

@@ -1,0 +1,16 @@
+{{template "base" .}}
+<!DOCTYPE html>
+<html lang="en">
+<body>
+<div class="container col-md-6" style="padding: 80px">
+    <form method="post" style="margin-top: 20px">
+        <div class="form-group">
+                <textarea class="form-control" id="exampleFormControlTextarea1" rows="7" name="body" >{{.Post.Body}}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+    </form>
+
+</div>
+
+</body>
+</html>
