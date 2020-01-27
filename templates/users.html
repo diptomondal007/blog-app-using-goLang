@@ -10,16 +10,23 @@
     <div class="container col-md-4" style="padding: 20px">
         <div class="alert alert-primary" role="alert">
             {{$user.Username}}
+            {{if $user.IsOwnedThisAccount}}
             <div >
+
                 <a href="/update?username={{ $user.Username }}">Edit</a>
                 <a href="/delete?username={{ $user.Username }}">Delete</a>
-                {{if $user.IsFollowedByCurrentUser}}
-                    <a href="/unfollow?username={{ $user.Username }}">UnFollow</a>
-                    {{else}}
-                    <a href="/follow?username={{ $user.Username }}">Follow</a>
-                {{end}}
+
 
             </div>
+
+            {{end}}
+            {{if not $user.IsOwnedThisAccount}}
+                {{if $user.IsFollowedByCurrentUser}}
+                    <a href="/unfollow?username={{ $user.Username }}">UnFollow</a>
+                {{else}}
+                    <a href="/follow?username={{ $user.Username }}">Follow</a>
+            {{end}}
+            {{end}}
         </div>
     </div>
 {{end}}

@@ -1,0 +1,118 @@
+{{template "base" .}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div class="container">
+    <div class="row m-y-2">
+        <div class="col-lg-8 push-lg-4">
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a href="" data-target="#profile" data-toggle="tab" class="nav-link active">Profile</a>
+                </li>
+                <li class="nav-item">
+                    <a href="" data-target="#edit" data-toggle="tab" class="nav-link">Edit</a>
+                </li>
+            </ul>
+            <div class="tab-content p-b-3">
+                <div class="tab-pane active" id="profile">
+                    <h4 class="m-y-2">User Profile</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>About</h6>
+                            <p>
+                                First Name : {{.FirstName}}
+                            </p>
+                            <p>
+                                Last Name : {{.LastName}}
+                            </p>
+                            <p>
+                                Email : {{.Email}}
+                            </p>
+                            <p>
+                                Username : {{.LoggedUser}} <a href="/update?username={{.LoggedUser}}">Edit?</a>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <hr>
+                            <span class="tag tag-primary"><i class="fa fa-user"></i> {{.Followers}} Followers</span>
+                        </div>
+                        <div class="col-md-12">
+                            <h4 class="m-t-2"><span class="fa fa-clock-o ion-clock pull-xs-right"></span> Recent Posts</h4>
+                            <div style="margin-top: 30px">
+                                {{range $post := .Posts}}
+                                    <div class="card" style="padding-top: 20px ;margin-top: 30px">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{$post.Username}}</h5>
+                                            <p class="card-text">{{$post.Body}}</p>
+                                            {{if $post.Editable}}
+                                                <div>
+                                                    <a href="/updatePost?id={{ $post.Id }}">Edit</a>
+                                                    <a href="/deletePost?id={{ $post.Id }}">Delete</a>
+
+                                                </div>
+                                            {{end}}
+                                        </div>
+                                    </div>
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                    <!--/row-->
+                </div>
+
+                <div class="tab-pane" id="edit">
+                    <h4 class="m-y-2">Edit Profile</h4>
+                    <form role="form" method="post">
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label form-control-label">First name</label>
+                            <div class="col-lg-9">
+                                <input class="form-control" type="text" value={{.FirstName}} name="firstName">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label form-control-label">Last name</label>
+                            <div class="col-lg-9">
+                                <input class="form-control" type="text" value={{.LastName}} name="lastName">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label form-control-label">Email</label>
+                            <div class="col-lg-9">
+                                <input class="form-control" type="email" value={{.Email}} name="email">
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-lg-3 col-form-label form-control-label"></label>
+                            <div class="col-lg-9">
+                                <input type="reset" class="btn btn-secondary" value="Cancel">
+                                <input type="submit" class="btn btn-primary" value="Save Changes">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 pull-lg-8 text-xs-center">
+            <img src="/images/{{.ProfilePic}}" class="m-x-auto img-fluid img-circle" alt="avatar">
+            <h6 class="m-t-2">Upload a different photo</h6>
+            <div class="custom-file">
+            <form enctype="multipart/form-data" method="post">
+                <input type="file" name="uploadfile" class="custom-file-input">
+                <label class="custom-file-label" for="customFile">Choose file</label>
+                <input type="hidden" name="token" value="" >
+                <input type="submit" value="upload" class="btn btn-light" style="margin-top:10px " >
+
+            </form>
+            </div>
+        </div>
+    </div>
+</div>
+<hr>
+
+</body>
+</html>

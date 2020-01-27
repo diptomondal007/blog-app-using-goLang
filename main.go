@@ -13,7 +13,9 @@ func main() {
 	handlers.InitDB()
 	routingHandler()
 }
-
+const (
+	STATIC_DIR = "/images/"
+)
 func routingHandler() {
 	router := mux.NewRouter()
 	router.HandleFunc("/", handlers.IndexPageHandler).Methods("GET")
@@ -32,6 +34,11 @@ func routingHandler() {
 	router.HandleFunc("/logout",handlers.Logout)
 	router.HandleFunc("/follow",handlers.FollowUser)
 	router.HandleFunc("/unfollow",handlers.UnFollowUser)
+	router.HandleFunc("/profile",handlers.ProfilePage).Methods("GET")
+	router.HandleFunc("/profile",handlers.ProfilePageInputHandler).Methods("POST")
+	router.
+		PathPrefix(STATIC_DIR).
+		Handler(http.StripPrefix(STATIC_DIR, http.FileServer(http.Dir("."+STATIC_DIR))))
 	log.Fatalln(http.ListenAndServe("localhost:8000", router))
 }
 
