@@ -27,11 +27,13 @@ var loggedin_user string
 
 //Post struct
 type Post struct {
-	Id        int64
-	Body      string
-	Username  string
-	Editable  bool
-	Deletable bool
+	Id                   int64
+	Body                 string
+	Username             string
+	Likes                int64
+	IsLikedByCurrentUser bool
+	Editable             bool
+	Deletable            bool
 }
 
 type IndexData struct {
@@ -196,6 +198,31 @@ func IndexPageHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println(err)
 		}
+		post.Likes = 0
+		likesQuery, err := db.Query("SELECT is_liked from likes where post_id=$1", id)
+		if err != nil {
+			log.Println("Likes query failed")
+		}
+		for likesQuery.Next() {
+			var isLiked bool
+			err = likesQuery.Scan(&isLiked)
+			if isLiked {
+				post.Likes += 1
+			}
+
+		}
+		post.IsLikedByCurrentUser = false
+		isLikedByCurrentUserQuery, err := db.Query("SELECT is_liked from likes where user_name=$1 and post_id=$2", loggedin_user, id)
+		if err != nil {
+			log.Println("Is Liked by current User query failed")
+		}
+		for isLikedByCurrentUserQuery.Next()  {
+			var isLiked bool
+			isLikedByCurrentUserQuery.Scan(&isLiked)
+			if isLiked {
+				post.IsLikedByCurrentUser =true
+			}
+		}
 		post.Id = id
 		post.Body = body
 		post.Username = username
@@ -203,6 +230,7 @@ func IndexPageHandler(w http.ResponseWriter, r *http.Request) {
 			post.Editable = true
 			post.Deletable = true
 		}
+		log.Println(post.IsLikedByCurrentUser)
 		posts = append(posts, post)
 
 	}
@@ -214,7 +242,6 @@ func IndexPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	IndexPageData.Posts = posts
 	IndexPageData.LoggedUser = loggedin_user
-	log.Println(IndexPageData)
 	tm := template.Must(template.ParseFiles("./templates/index.html", "./templates/base.html"))
 	errortm := tm.Execute(w, IndexPageData)
 	log.Println(errortm)
@@ -480,9 +507,43 @@ func ProfilePageInputHandler(w http.ResponseWriter, r *http.Request) {
 		_, errUpdateProfilePic := db.Query("update users set profile_pic =$1 where username =$2", handler.Filename, loggedin_user)
 		if errUpdateProfilePic != nil {
 			log.Println("Sorry")
-		}else {
+		} else {
 			http.Redirect(w, r, "/profile", 302)
 		}
 	}
+}
+
+func PostLikeHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	log.Println(id)
+	_, err := db.Query("INSERT INTO likes(post_id,user_name,is_liked) values($1,$2,'t')", id, loggedin_user)
+	if err != nil {
+		log.Println("Inserting Like Failed")
+	}else {
+		http.Redirect(w, r, "/", 302)
+	}
+
+}
+
+func PostUnlikeHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	postLikeByUserIdQuery, err := db.Query("SELECT id from likes where post_id=$1 and user_name =$2", id, loggedin_user)
+	if err !=nil{
+		log.Println("Failed")
+	}else {
+		for postLikeByUserIdQuery.Next(){
+			var likeId int64
+			err = postLikeByUserIdQuery.Scan(&likeId)
+			log.Println(likeId)
+			_, err = db.Query("update likes set post_id = $1 , user_name = $2,is_liked ='f' where id =$3", id, loggedin_user,likeId)
+			if err != nil {
+				log.Println("Post Like Query Failed")
+			} else {
+				http.Redirect(w, r, "/", 302)
+			}
+		}
+	}
+
+
 
 }

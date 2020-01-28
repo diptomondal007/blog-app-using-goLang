@@ -36,6 +36,10 @@ func routingHandler() {
 	router.HandleFunc("/unfollow",handlers.UnFollowUser)
 	router.HandleFunc("/profile",handlers.ProfilePage).Methods("GET")
 	router.HandleFunc("/profile",handlers.ProfilePageInputHandler).Methods("POST")
+
+	router.HandleFunc("/like",handlers.PostLikeHandler)
+	router.HandleFunc("/unlike",handlers.PostUnlikeHandler)
+
 	router.
 		PathPrefix(STATIC_DIR).
 		Handler(http.StripPrefix(STATIC_DIR, http.FileServer(http.Dir("."+STATIC_DIR))))

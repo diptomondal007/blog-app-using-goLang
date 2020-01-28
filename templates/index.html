@@ -1,6 +1,8 @@
 {{template "base" .}}
 <!DOCTYPE html>
 <html lang="en">
+<head>
+</head>
 <body>
 <div class="container col-md-6">
     <form method="post" style="margin-top: 20px">
@@ -13,8 +15,18 @@
         {{range $post := .Posts}}
             <div class="card" style="padding-top: 20px ;margin-top: 30px">
                 <div class="card-body">
-                    <h5 class="card-title">{{$post.Username}}</h5>
+                    <h4 class="card-title">{{$post.Username}}</h4>
                     <p class="card-text">{{$post.Body}}</p>
+                    {{if $post.IsLikedByCurrentUser}}
+                        <a href="/unlike?id={{$post.Id}}" class="card-link text-danger like" type="submit">
+                            <i class="fas fa-thumbs-up"></i>
+                        </a>
+                        {{else}}
+                        <a href="/like?id={{$post.Id}}" class="card-link text-danger like" type="submit">
+                            <i class="far fa-thumbs-up"></i>
+                        </a>
+                    {{end}}
+                    <p class="card-text">{{$post.Likes}} Likes</p>
                     {{if $post.Editable}}
                         <div>
                             <a href="/updatePost?id={{ $post.Id }}">Edit</a>
@@ -22,6 +34,7 @@
 
                         </div>
                     {{end}}
+
                 </div>
             </div>
         {{end}}
