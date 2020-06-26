@@ -9,7 +9,9 @@
     user     = "postgres"
     password = "12345"
     dbname   = "blogDB"
-## Step 3:
-   Create database tables with the query in file create_tables.txt
 ## Step 2:
+   Create database tables with the query in file create_tables.txt
+## Step 3:
     go run main.go
+## Step 4:
+   Open a browser and navigate to localhost:8000
