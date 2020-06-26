@@ -43,7 +43,7 @@ type IndexData struct {
 }
 
 type UserPageData struct {
-	Users          [] User
+	Users          []User
 	LoggedUser     string
 	IsLoggedInUser bool
 }
@@ -216,11 +216,11 @@ func IndexPageHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println("Is Liked by current User query failed")
 		}
-		for isLikedByCurrentUserQuery.Next()  {
+		for isLikedByCurrentUserQuery.Next() {
 			var isLiked bool
 			isLikedByCurrentUserQuery.Scan(&isLiked)
 			if isLiked {
-				post.IsLikedByCurrentUser =true
+				post.IsLikedByCurrentUser = true
 			}
 		}
 		post.Id = id
@@ -519,7 +519,7 @@ func PostLikeHandler(w http.ResponseWriter, r *http.Request) {
 	_, err := db.Query("INSERT INTO likes(post_id,user_name,is_liked) values($1,$2,'t')", id, loggedin_user)
 	if err != nil {
 		log.Println("Inserting Like Failed")
-	}else {
+	} else {
 		http.Redirect(w, r, "/", 302)
 	}
 
@@ -528,14 +528,14 @@ func PostLikeHandler(w http.ResponseWriter, r *http.Request) {
 func PostUnlikeHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	postLikeByUserIdQuery, err := db.Query("SELECT id from likes where post_id=$1 and user_name =$2", id, loggedin_user)
-	if err !=nil{
+	if err != nil {
 		log.Println("Failed")
-	}else {
-		for postLikeByUserIdQuery.Next(){
+	} else {
+		for postLikeByUserIdQuery.Next() {
 			var likeId int64
 			err = postLikeByUserIdQuery.Scan(&likeId)
 			log.Println(likeId)
-			_, err = db.Query("update likes set post_id = $1 , user_name = $2,is_liked ='f' where id =$3", id, loggedin_user,likeId)
+			_, err = db.Query("update likes set post_id = $1 , user_name = $2,is_liked ='f' where id =$3", id, loggedin_user, likeId)
 			if err != nil {
 				log.Println("Post Like Query Failed")
 			} else {
@@ -543,7 +543,5 @@ func PostUnlikeHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-
-
 
 }

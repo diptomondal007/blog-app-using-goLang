@@ -10,7 +10,7 @@ var db *sql.DB
 const (
 	host     = "localhost"
 	port     = 5432
-	user     = "postgres"
+	user     = "dipto"
 	password = "12345"
 	dbname   = "blogDB"
 )
