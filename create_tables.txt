@@ -1,3 +1,4 @@
+DROP TABLE if exists public.users;
 CREATE TABLE IF NOT EXISTS public.users (
 	username text NOT NULL,
 	"password" text NOT NULL,
@@ -8,9 +9,7 @@ CREATE TABLE IF NOT EXISTS public.users (
 	PRIMARY KEY(username)
 );
 
-DROP TABLE public.posts;
-
-
+CREATE SEQUENCE IF NOT EXISTS posts_sampleid_seq;
 CREATE TABLE IF NOT EXISTS public.posts (
 	id bigint DEFAULT nextval('posts_sampleid_seq'::regclass) NOT NULL,
 	body text,
@@ -24,10 +23,8 @@ ALTER TABLE IF EXISTS public.posts
 	REFERENCES users (username)
 	ON DELETE CASCADE
 	ON UPDATE CASCADE;
-
-DROP TABLE public.likes;
-
-
+	
+CREATE SEQUENCE IF NOT EXISTS likes_sampleid_seq;
 CREATE TABLE IF NOT EXISTS public.likes (
 	id bigint DEFAULT nextval('likes_sampleid_seq'::regclass) NOT NULL,
 	post_id bigint NOT NULL,
@@ -36,12 +33,10 @@ CREATE TABLE IF NOT EXISTS public.likes (
 	PRIMARY KEY(id)
 );
 
-DROP TABLE public.followers;
 
 CREATE TABLE IF NOT EXISTS public.followers (
 	user_id text NOT NULL,
 	following_id text NOT NULL,
-	PRIMARY KEY(user_id)
 );
 
 ALTER TABLE IF EXISTS public.followers

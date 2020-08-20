@@ -9,6 +9,10 @@
     user     = "postgres"
     password = "12345"
     dbname   = "blogDB"
+    or run command in docker
+    ```
+    docker run -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=12345 -e POSTGRES_DB=blogDB library/postgres
+    ```
 ## Step 2:
    Create database tables with the query in file create_tables.txt
 ## Step 3:
